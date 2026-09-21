@@ -315,8 +315,15 @@ jobs:
           GOOGLE_SERVICE_INFO_PLIST_B64: ${{ secrets.GOOGLE_SERVICE_INFO_PLIST_B64 }}
           FIREBASE_OPTIONS_DART_B64: ${{ secrets.FIREBASE_OPTIONS_DART_B64 }}
         run: |
-          echo "$GOOGLE_SERVICE_INFO_PLIST_B64" | base64 -d > ios/Runner/GoogleService-Info.plist
-          echo "$FIREBASE_OPTIONS_DART_B64" | base64 -d > lib/firebase_options.dart
+          # Fork test builds have no secrets configured: leave the committed
+          # lib/firebase_options.dart in place and let the Xcode "Ensure
+          # GoogleService-Info.plist" phase generate its inert placeholder.
+          if [ -n "$GOOGLE_SERVICE_INFO_PLIST_B64" ]; then
+            echo "$GOOGLE_SERVICE_INFO_PLIST_B64" | base64 -d > ios/Runner/GoogleService-Info.plist
+          fi
+          if [ -n "$FIREBASE_OPTIONS_DART_B64" ]; then
+            echo "$FIREBASE_OPTIONS_DART_B64" | base64 -d > lib/firebase_options.dart
+          fi
 
       - name: Build unsigned iOS app
         run: flutter build ios --release --no-codesign --dart-define-from-file=.env
